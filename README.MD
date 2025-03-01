@@ -29,6 +29,6 @@ Examples:
 | ----------- | ----------- |
 | ![index](/img/MainInterfacePic.png) | ![QueryHistory](/img/History.png)|
 
-## Used libriries ##
+## Used libraries ##
 
 Python-Dotenv, FastAPI, Jinja2, SQLModel, uvicorn, httpx
