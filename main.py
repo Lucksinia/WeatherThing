@@ -23,13 +23,14 @@ class WeatherQuery(SQLModel, table=True):
     __table_args__ = {"extend_existing": True}  # hack for already created db
     id: int = Field(default=None, primary_key=True)
     city_name: str | None = Field(default=None, index=True)
-    # special datetime funny, because utcnow is deprecated.
+    # special datetime funny, because utcnow() is deprecated in python 3.12.5.
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     temperature: float | None
     description: str | None
     icon: str | None = Field(default="o1d")
 
 
+# creating main:app without static files. Don't need them.
 app = FastAPI()
 engine = create_engine(DATABASE_URL)
 templates = Jinja2Templates(directory="templates")
@@ -49,6 +50,7 @@ async def redirect():
     return RedirectResponse("/weather")
 
 
+# I could've named it index.
 @app.get("/weather")
 async def get_weather_page(request: Request):
     return templates.TemplateResponse("weather.html", {"request": request})
@@ -61,6 +63,7 @@ async def fetch_weather(
     session: Session = Depends(get_session),
 ):
     params = {"q": city_name, "appid": API_KEY, "units": "metric"}
+    # I wanted to do it with literal fastapi get(), but confused myself, so here is a patch with httpx
     async with httpx.AsyncClient() as client:
         response = await client.get(WEATHER_API_URL, params=params)
 
@@ -70,6 +73,7 @@ async def fetch_weather(
     weather_data = response.json()
 
     if response.status_code == 200:
+        # just exstracting some data from json manually
         temperature = weather_data["main"]["temp"]
         description = weather_data["weather"][0]["description"]
         icon = weather_data["weather"][0]["icon"]
@@ -81,8 +85,8 @@ async def fetch_weather(
             icon=icon,
         )
         session.add(weather_query)
-
         session.commit()
+        # Let's expire it a second time, and refresh inside db
         session.refresh(weather_query)
 
         return templates.TemplateResponse(
@@ -100,6 +104,9 @@ async def fetch_weather(
 
 @app.get("/history")
 async def get_history(request: Request, session: Session = Depends(get_session)):
+    # that is pretty bad, but considering that Open weather map has only
+    # 1000/day requests that's on free teir...
+    # I don't think we need limit, so i didn't implement one.
     results = session.exec(select(WeatherQuery)).all()
     return templates.TemplateResponse(
         "queries.html", {"request": request, "data": results}
