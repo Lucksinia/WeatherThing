@@ -1,0 +1,38 @@
+{% include "macro.html" %}
+
+<body>
+    <h2><a href="/weather">Query Weather</a></h2>
+    <h2><a href="/history">View Query History</a></h2>
+
+    <div class="search">
+        <h1>Check the Weather!!!</h1>
+
+        <form method="post" action="/weather">
+            <input type="text" name="city_name" placeholder="Enter City Name" required />
+            <button type="submit">Check</button>
+        </form>
+    </div>
+    {# trying to dinamically reload page after POST#}
+    {% if city %}
+    <div class="widget">
+
+        <div class="left-panel panel">
+            <div class="date">
+                {{timestamp}}
+            </div>
+            <div class="city">
+                {{city}}
+            </div>
+            <div class="temp">
+                {{temperature}}&deg;
+            </div>
+        </div>
+        <div class="right-panel panel">
+            {{description}}
+        </div>
+
+    </div>
+    {% endif %}
+</body>
+
+</html>
