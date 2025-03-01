@@ -27,6 +27,7 @@ class WeatherQuery(SQLModel, table=True):
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     temperature: float | None
     description: str | None
+    icon: str | None = Field(default="o1d")
 
 
 app = FastAPI()
@@ -71,10 +72,13 @@ async def fetch_weather(
     if response.status_code == 200:
         temperature = weather_data["main"]["temp"]
         description = weather_data["weather"][0]["description"]
-
+        icon = weather_data["weather"][0]["icon"]
         # Save to database if succsessfull
         weather_query = WeatherQuery(
-            city_name=city_name, temperature=temperature, description=description
+            city_name=city_name,
+            temperature=temperature,
+            description=description,
+            icon=icon,
         )
         session.add(weather_query)
 
@@ -89,6 +93,7 @@ async def fetch_weather(
                 "temperature": temperature,
                 "description": description,
                 "timestamp": weather_query.timestamp,
+                "icon": icon,
             },
         )
 
